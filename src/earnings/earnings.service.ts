@@ -59,12 +59,36 @@ export class EarningsService {
   }
 
   async findEarningByDate(date: Date) {
+    const lastRecord = await this.earningModel.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: new Date(date.getFullYear(), 0, 1),
+            $lte: date
+          }
+        }
+      },
+      {
+        $sort: {
+          date: -1
+        }
+      },
+      {
+        $limit: 1
+      },
+      {
+        $project: {
+          user: 1,
+          date: 1
+        }
+      }
+    ])
     const results = await Promise.all([
       this.earningModel.aggregate([
         {
           $match: {
             date: {
-              $gte: new Date(`01-01-${date.getFullYear()}`),
+              $gte: new Date(date.getFullYear(), 0, 1),
               $lte: date
             }
           },
@@ -82,13 +106,13 @@ export class EarningsService {
       this.projectionModel.findOne({ year: date.getFullYear() })
     ])
     return {
+      lastRecord: lastRecord[0],
       earning: results[0][0],
       projection: results[1]
     }
   }
 
   async getComparisonData(date: Date) {
-    console.log(date.getFullYear());
     return await this.earningModel.aggregate([
       {
         $match: {

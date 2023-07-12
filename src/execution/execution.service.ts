@@ -27,11 +27,35 @@ export class ExecutionService {
   }
 
   async findExecutionByDate(date: Date) {
-    return await this.executionModel.aggregate([
+    const lastRecord = await this.executionModel.aggregate([
       {
         $match: {
           date: {
-            $gte: new Date(`01-01-${date.getFullYear()}`),
+            $gte: new Date(date.getFullYear(), 0, 1),
+            $lte: date
+          }
+        }
+      },
+      {
+        $sort: {
+          date: -1
+        }
+      },
+      {
+        $limit: 1
+      },
+      {
+        $project: {
+          user: 1,
+          date: 1
+        }
+      }
+    ])
+    const data = await this.executionModel.aggregate([
+      {
+        $match: {
+          date: {
+            $gte: new Date(date.getFullYear(), 0, 1),
             $lte: date
           }
         },
@@ -45,6 +69,7 @@ export class ExecutionService {
         }
       }
     ])
+    return { execution: data, lastRecord: lastRecord[0] }
   }
   async getRecords() {
     return await this.executionModel.find({}).select('user date').sort({ _id: -1 })

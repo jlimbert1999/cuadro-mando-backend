@@ -16,6 +16,7 @@ export class EarningsController {
   createProjection(@Body() createProjectionDto: CreateProjectionDto) {
     return this.earningsService.createProjection(createProjectionDto);
   }
+
   @Post('upload')
   uploadEarning(@Body() createEarningDto: CreateEarningDto[]) {
     return this.earningsService.uploadEarning(createEarningDto);

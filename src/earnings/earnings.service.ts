@@ -83,6 +83,7 @@ export class EarningsService {
         }
       }
     ])
+
     const results = await Promise.all([
       this.earningModel.aggregate([
         {

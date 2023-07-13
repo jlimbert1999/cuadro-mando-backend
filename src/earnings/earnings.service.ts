@@ -133,4 +133,32 @@ export class EarningsService {
       },
     ])
   }
+  async getComparisonProjection(date: Date) {
+    const results = await Promise.all([
+      this.earningModel.aggregate([
+        {
+          $match: {
+            date: {
+              $gte: new Date(date.getFullYear(), 0, 1),
+              $lt: new Date(date.getFullYear() + 1, 0, 1)
+            }
+          },
+        },
+        {
+          $group: {
+            _id: { $month: '$date' },
+            ACTIVIDADES: { $sum: '$ACTIVIDADES' },
+            VEHICULOS: { $sum: '$VEHICULOS' },
+            INMUEBLES: { $sum: '$INMUEBLES' },
+            TASAS: { $sum: '$TASAS' },
+          },
+        },
+      ]),
+      this.projectionModel.findOne({ year: date.getFullYear() })
+    ])
+    return {
+      earning: results[0],
+      projection: results[1]
+    }
+  }
 }

@@ -38,6 +38,14 @@ export class EarningsController {
   ) {
     return this.earningsService.getComparisonData(new Date(date))
   }
+  @Get('/comparison/projection/:date')
+  getComparisonProjection(
+    @Param('date', ParseIntPipe) date: number
+  ) {
+    return this.earningsService.getComparisonProjection(new Date(date))
+  }
+
+
 
 
 }

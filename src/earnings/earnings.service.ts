@@ -59,33 +59,35 @@ export class EarningsService {
   }
 
   async findEarningByDate(date: Date) {
-    const lastRecord = await this.earningModel.aggregate([
-      {
-        $match: {
-          date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date
-          }
-        }
-      },
-      {
-        $sort: {
-          date: -1
-        }
-      },
-      {
-        $limit: 1
-      },
-      {
-        $project: {
-          user: 1,
-          date: 1
-        }
-      }
-    ])
-
+    date.setHours(23, 59, 59, 999)
+    const currentMount = date.getMonth() + 1
     const results = await Promise.all([
       this.earningModel.aggregate([
+        {
+          $match: {
+            date: {
+              $gte: new Date(date.getFullYear(), 0, 1),
+              $lte: date
+            }
+          }
+        },
+        {
+          $sort: {
+            date: -1
+          }
+        },
+        {
+          $limit: 1
+        },
+        {
+          $project: {
+            user: 1,
+            date: 1
+          }
+        }
+      ]),
+      this.earningModel.aggregate([
+
         {
           $match: {
             date: {
@@ -102,14 +104,73 @@ export class EarningsService {
             VEHICULOS: { $sum: '$VEHICULOS' },
             INMUEBLES: { $sum: '$INMUEBLES' }
           }
+        },
+        {
+          $project: {
+            _id: 0
+          }
         }
       ]),
-      this.projectionModel.findOne({ year: date.getFullYear() })
+      this.projectionModel.aggregate([
+        {
+          $match: {
+            year: date.getFullYear()
+          },
+        },
+        {
+          $unwind: "$months"
+        },
+        {
+          $group: {
+            _id: null,
+            ACTIVIDADES: { $sum: '$months.ACTIVIDADES' },
+            TASAS: { $sum: '$months.TASAS' },
+            VEHICULOS: { $sum: '$months.VEHICULOS' },
+            INMUEBLES: { $sum: '$months.INMUEBLES' }
+          }
+        },
+        {
+          $project: {
+            _id: 0
+          }
+        }
+      ]),
+      this.projectionModel.aggregate([
+        {
+          $match: {
+            year: date.getFullYear()
+          },
+        },
+        {
+          $project: {
+            months: { "$slice": ["$months", 0, currentMount] }
+          }
+        },
+        {
+          $unwind: '$months',
+        },
+        {
+          $group: {
+            _id: null,
+            ACTIVIDADES: { $sum: '$months.ACTIVIDADES' },
+            TASAS: { $sum: '$months.TASAS' },
+            VEHICULOS: { $sum: '$months.VEHICULOS' },
+            INMUEBLES: { $sum: '$months.INMUEBLES' }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+          }
+        },
+      ])
     ])
+    const lastRecord = results[0][0]
+    const earning = results[1][0]
+    const yearProjection = results[2][0]
+    const monthProjection = results[3][0]
     return {
-      lastRecord: lastRecord[0],
-      earning: results[0][0],
-      projection: results[1]
+      lastRecord, earning, yearProjection, monthProjection
     }
   }
 

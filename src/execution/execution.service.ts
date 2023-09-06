@@ -8,22 +8,26 @@ import { Model } from 'mongoose';
 export class ExecutionService {
   constructor(
     @InjectModel(Execution.name) private executionModel: Model<Execution>,
-  ) {
-  }
+  ) {}
 
   async create(createExecutionDto: CreateExecutionDto) {
-    let { date } = createExecutionDto
-    date = new Date(date)
+    let { date } = createExecutionDto;
+    date = new Date(date);
     const currentExecution = await this.executionModel.findOne({
-      "$expr": {
-        "$and": [
-          { "$eq": [{ "$month": "$date" }, date.getMonth() + 1] },
-          { "$eq": [{ "$year": "$date" }, date.getFullYear()] },
-        ]
-      }
-    })
-    if (currentExecution) return await this.executionModel.findByIdAndUpdate(currentExecution._id, createExecutionDto, { new: true })
-    return await this.executionModel.create(createExecutionDto)
+      $expr: {
+        $and: [
+          { $eq: [{ $month: '$date' }, date.getMonth() + 1] },
+          { $eq: [{ $year: '$date' }, date.getFullYear()] },
+        ],
+      },
+    });
+    if (currentExecution)
+      return await this.executionModel.findByIdAndUpdate(
+        currentExecution._id,
+        createExecutionDto,
+        { new: true },
+      );
+    return await this.executionModel.create(createExecutionDto);
   }
 
   async findExecutionByDate(date: Date) {
@@ -32,44 +36,45 @@ export class ExecutionService {
         $match: {
           date: {
             $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date
-          }
-        }
+            $lte: date,
+          },
+        },
       },
       {
         $sort: {
-          date: -1
-        }
+          date: -1,
+        },
       },
       {
-        $limit: 1
+        $limit: 1,
       },
       {
         $project: {
           user: 1,
-          date: 1
-        }
-      }
-    ])
+          date: 1,
+        },
+      },
+    ]);
+
     const data = await this.executionModel.aggregate([
       {
         $match: {
           date: {
             $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date
-          }
+            $lte: date,
+          },
         },
       },
-      { "$unwind": "$data" },
+      { $unwind: '$data' },
       {
         $group: {
           _id: '$data.secretaria',
-          "presupuesto_vigente": { "$sum": "$data.presupVig" },
-          "presupuesto_ejecutado": { "$sum": "$data.ejecutado" }
-        }
-      }
-    ])
-    return { execution: data, lastRecord: lastRecord[0] }
+          presupuesto_vigente: { $sum: '$data.presupVig' },
+          presupuesto_ejecutado: { $sum: '$data.ejecutado' },
+        },
+      },
+    ]);
+    return { execution: data, lastRecord: lastRecord[0] };
   }
 
   async findExecutionByDepartments(date: Date) {
@@ -78,19 +83,19 @@ export class ExecutionService {
         $match: {
           date: {
             $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date
-          }
+            $lte: date,
+          },
         },
       },
-      { "$unwind": "$data" },
+      { $unwind: '$data' },
       {
         $group: {
           _id: '$data.secretaria',
-          "presupuesto_vigente": { "$sum": "$data.presupVig" },
-          "presupuesto_ejecutado": { "$sum": "$data.ejecutado" }
-        }
-      }
-    ])
+          presupuesto_vigente: { $sum: '$data.presupVig' },
+          presupuesto_ejecutado: { $sum: '$data.ejecutado' },
+        },
+      },
+    ]);
   }
 
   async getDetailsOneDepartment(date: Date, initials: string) {
@@ -99,7 +104,7 @@ export class ExecutionService {
         $match: {
           date: {
             $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date
+            $lte: date,
           },
         },
       },
@@ -107,17 +112,20 @@ export class ExecutionService {
         $project: {
           data: {
             $filter: {
-              input: "$data",
-              as: "item",
-              cond: { $eq: ["$$item.secretaria", initials.toUpperCase()] }
-            }
-          }
-        }
-      }
-    ])
+              input: '$data',
+              as: 'item',
+              cond: { $eq: ['$$item.secretaria', initials.toUpperCase()] },
+            },
+          },
+        },
+      },
+    ]);
   }
 
   async getRecords() {
-    return await this.executionModel.find({}).select('user date').sort({ _id: -1 })
+    return await this.executionModel
+      .find({})
+      .select('user date')
+      .sort({ _id: -1 });
   }
 }

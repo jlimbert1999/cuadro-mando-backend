@@ -1,24 +1,25 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EarningsModule } from './earnings/earnings.module';
-import { AuthModule } from './auth/auth.module';
-import { ExecutionModule } from './execution/execution.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { EarningsModule } from './earnings/earnings.module';
+import { ExecutionModule } from './execution/execution.module';
+import { AuthModule } from './auth copy/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AdministrationModule } from './administration/administration.module';
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost/recaudacion'),
+    MongooseModule.forRoot('mongodb://127.0.0.1:27017/recaudacion'),
     EarningsModule,
     AuthModule,
     ExecutionModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
+    AdministrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
-
 })
-export class AppModule { }
+export class AppModule {}

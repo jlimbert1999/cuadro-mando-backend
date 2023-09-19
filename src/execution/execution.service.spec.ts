@@ -8,10 +8,8 @@ describe('ExecutionService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [ExecutionService],
     }).compile();
-
     service = module.get<ExecutionService>(ExecutionService);
   });
-
   it('should be defined', () => {
     expect(service).toBeDefined();
   });

@@ -10,6 +10,7 @@ import { Earnings } from './schemas/earning.schema';
 import { Model } from 'mongoose';
 import { Projections } from './schemas/projection.schema';
 import { CreateProjectionDto } from './dto/create-projection.dto';
+import { PaginationParams } from 'src/shared/dto/pagination-params';
 
 @Injectable()
 export class EarningsService {
@@ -66,11 +67,38 @@ export class EarningsService {
     }
   }
 
-  async getRecords() {
-    return await this.earningModel
-      .find({})
-      .select('user date')
-      .sort({ _id: -1 });
+  async getRecords({ limit, offset }: PaginationParams) {
+    const dataPaginated = await this.earningModel.aggregate([
+      {
+        $project: {
+          user: 1,
+          date: 1,
+          ACTIVIDADES: 1,
+          INMUEBLES: 1,
+          TASAS: 1,
+          VEHICULOS: 1,
+          total: {
+            $add: ['$ACTIVIDADES', '$INMUEBLES', '$TASAS', '$VEHICULOS'],
+          },
+        },
+      },
+      { $sort: { date: -1 } },
+      {
+        $facet: {
+          paginatedResults: [{ $skip: offset }, { $limit: limit }],
+          totalCount: [
+            {
+              $count: 'count',
+            },
+          ],
+        },
+      },
+    ]);
+    const records = dataPaginated[0].paginatedResults;
+    const length = dataPaginated[0].totalCount[0]
+      ? dataPaginated[0].totalCount[0].count
+      : 0;
+    return { records, length };
   }
 
   async findEarningByDate(date: Date) {

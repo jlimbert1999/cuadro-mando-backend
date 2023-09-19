@@ -27,21 +27,21 @@ export class AuthService {
       throw new BadRequestException(
         'El usuario para este ingreso ha sido deshabilitado',
       );
+    if (!bcrypt.compareSync(authDto.password, user.password))
+      throw new BadRequestException('login o password incorrectos');
     return {
       token: this.getToken({
         id_user: user._id,
         fullname: user.fullname,
       }),
-      resources: user.role.permissions.map((privilege) => privilege.resource),
+      resources: user.role,
     };
   }
 
   async checkAuthStatus(id_account: string) {
     const user = await this.userModel.findById(id_account);
     if (!user) throw new UnauthorizedException();
-    const resources = user.role.permissions.map(
-      (privilege) => privilege.resource,
-    );
+    const resources = user.role;
     return {
       token: this.getToken({
         id_user: user._id,

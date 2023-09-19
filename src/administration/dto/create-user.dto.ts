@@ -11,7 +11,7 @@ export class CreateUserDto {
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(1)
-  recipients: string[];
+  role: string[];
 
   @IsString()
   @IsNotEmpty()

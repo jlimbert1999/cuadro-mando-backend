@@ -2,6 +2,11 @@ import { Module } from '@nestjs/common';
 import { ExecutionService } from './execution.service';
 import { ExecutionController } from './execution.controller';
 import { MongooseModule } from '@nestjs/mongoose';
+import {
+  ExecutionDetail,
+  ExecutionDetailSchema,
+} from './schemas/execution-detail.schema';
+import { AuthModule } from 'src/auth/auth.module';
 import { Execution, ExecutionSchema } from './schemas/execution.schema';
 
 @Module({
@@ -9,8 +14,10 @@ import { Execution, ExecutionSchema } from './schemas/execution.schema';
   providers: [ExecutionService],
   imports: [
     MongooseModule.forFeature([
-      { name: Execution.name, schema: ExecutionSchema }
+      { name: ExecutionDetail.name, schema: ExecutionDetailSchema },
+      { name: Execution.name, schema: ExecutionSchema },
     ]),
+    AuthModule,
   ],
 })
-export class ExecutionModule { }
+export class ExecutionModule {}

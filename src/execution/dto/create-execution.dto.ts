@@ -55,7 +55,7 @@ export class ExecutionData {
     @IsNumber()
     saldoDeveng: number
 }
-export class CreateExecutionDto {
+export class CreateExecutionDetailDto {
     @IsArray()
     @ValidateNested({ each: true })
     @ArrayMinSize(1)

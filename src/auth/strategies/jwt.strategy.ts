@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException(
         'Token invalido, vuelva a iniciar sesion',
       );
-    if (user.role.permissions.length === 0)
+    if (user.role.length === 0)
       throw new UnauthorizedException(
         'Esta cuenta no tiene ningun permiso asignado',
       );

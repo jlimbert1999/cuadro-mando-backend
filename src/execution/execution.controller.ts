@@ -3,17 +3,21 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ExecutionService } from './execution.service';
-import { CreateExecutionDto } from './dto/create-execution.dto';
+import { CreateExecutionDetailDto } from './dto/create-execution.dto';
+import { CreateExecutionDto } from './dto/execution.dto';
 
 @Controller('execution')
 export class ExecutionController {
   constructor(private readonly executionService: ExecutionService) {}
+
+  @Post('detail')
+  createDetail(@Body() createExecutionDto: CreateExecutionDetailDto) {
+    return this.executionService.createDetail(createExecutionDto);
+  }
 
   @Post()
   create(@Body() createExecutionDto: CreateExecutionDto) {
@@ -25,6 +29,10 @@ export class ExecutionController {
     return await this.executionService.getRecords();
   }
 
+  @Get('detail/:date')
+  getCurrentDetailExecution(@Param('date', ParseIntPipe) date: number) {
+    return this.executionService.findDetailExecutionByDate(new Date(date));
+  }
   @Get(':date')
   getCurrentExecution(@Param('date', ParseIntPipe) date: number) {
     return this.executionService.findExecutionByDate(new Date(date));

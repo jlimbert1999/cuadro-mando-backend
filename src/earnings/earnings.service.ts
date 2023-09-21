@@ -19,7 +19,7 @@ export class EarningsService {
     @InjectModel(Projections.name) private projectionModel: Model<Projections>,
   ) {}
 
-  async create(createEarningDto: CreateEarningDto) {
+  async create(createEarningDto: CreateEarningDto, id_user: string) {
     let { date } = createEarningDto;
     date = new Date(date);
     const day = date.getUTCDate();
@@ -37,15 +37,18 @@ export class EarningsService {
     if (currentEarning)
       return await this.earningModel.findByIdAndUpdate(
         currentEarning._id,
-        createEarningDto,
+        { ...createEarningDto, user: id_user },
         { new: true },
       );
-    return await this.earningModel.create(createEarningDto);
+    return await this.earningModel.create({
+      ...createEarningDto,
+      user: id_user,
+    });
   }
 
-  async uploadEarning(createEarningDto: CreateEarningDto[]) {
+  async uploadEarning(createEarningDto: CreateEarningDto[], id_user: string) {
     for (const earning of createEarningDto) {
-      await this.create(earning);
+      await this.create(earning, id_user);
     }
     return true;
   }
@@ -83,6 +86,17 @@ export class EarningsService {
         },
       },
       { $sort: { date: -1 } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
       {
         $facet: {
           paginatedResults: [{ $skip: offset }, { $limit: limit }],

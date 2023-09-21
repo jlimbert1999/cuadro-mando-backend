@@ -10,6 +10,8 @@ import { Model } from 'mongoose';
 import { JwtPayload } from './interfaces/jwt.interface';
 import { AuthDto } from './dto/auth.dto';
 import { User } from 'src/administration/schemas/user.schema';
+import { ValidRoles } from './interfaces/valid-resources.interface';
+import { systemModules } from 'src/administration/helpers/menu';
 
 @Injectable()
 export class AuthService {
@@ -54,121 +56,11 @@ export class AuthService {
   getToken(payload: JwtPayload) {
     return this.jwtService.sign(payload);
   }
-  getMenu(resources: string[]) {
-    const menu = [];
-    resources.forEach((resource) => {
-      switch (resource) {
-        case 'cuentas':
-          menu.push({
-            text: 'Cuentas',
-            icon: 'account_circle',
-            routerLink: 'configuraciones/cuentas',
-          });
-          menu.push({
-            text: 'Grupo de trabajo',
-            icon: 'account_circle',
-            routerLink: 'configuraciones/groupware',
-          });
-          break;
-        case 'usuarios':
-          menu.push({
-            text: 'Funcionarios',
-            icon: 'person',
-            routerLink: 'configuraciones/funcionarios',
-          });
-          break;
-        case 'roles':
-          menu.push({
-            text: 'Roles',
-            icon: 'badge',
-            routerLink: 'configuraciones/roles',
-          });
-          break;
-        case 'cargos':
-          menu.push({
-            text: 'Cargos',
-            icon: 'badge',
-            children: [
-              {
-                text: 'Registros',
-                icon: 'badge',
-                routerLink: 'configuraciones/cargos',
-              },
-              {
-                text: 'Organigrama',
-                icon: 'schema',
-                routerLink: 'configuraciones/organigrama',
-              },
-            ],
-          });
-          break;
-        case 'instituciones':
-          menu.push({
-            text: 'Instituciones',
-            icon: 'apartment',
-            routerLink: 'configuraciones/instituciones',
-          });
-          break;
-        case 'dependencias':
-          menu.push({
-            text: 'Dependencias',
-            icon: 'holiday_village',
-            routerLink: 'configuraciones/dependencias',
-          });
-          break;
-        case 'tipos':
-          menu.push({
-            text: 'Tipos',
-            icon: 'folder_copy',
-            routerLink: 'configuraciones/tipos',
-          });
-          break;
-        case 'externos':
-          menu.push({
-            text: 'Externos',
-            icon: 'folder_shared',
-            routerLink: 'tramites/externos',
-          });
-          break;
-        case 'internos':
-          menu.push({
-            text: 'Internos',
-            icon: 'topic',
-            routerLink: 'tramites/internos',
-          });
-          break;
-        case 'entradas':
-          menu.push({
-            text: 'Bandeja entrada',
-            icon: 'drafts',
-            routerLink: 'bandejas/entrada',
-          });
-          break;
-        case 'salidas':
-          menu.push({
-            text: 'Bandeja salida',
-            icon: 'mail',
-            routerLink: 'bandejas/salida',
-          });
-          break;
-        case 'archivos':
-          menu.push({
-            text: 'Archivos',
-            icon: 'file_copy',
-            routerLink: 'archivos',
-          });
-          break;
-        case 'busquedas':
-          menu.push({
-            text: 'Busquedas',
-            icon: 'search',
-            routerLink: 'busquedas',
-          });
-          break;
-        default:
-          break;
-      }
-    });
+
+  getMenu(roles: ValidRoles[]) {
+    const menu = systemModules.filter((resource) =>
+      resource.roles.some((role) => roles.includes(role)),
+    );
     return menu;
   }
 }

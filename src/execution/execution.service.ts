@@ -5,6 +5,7 @@ import { CreateExecutionDetailDto } from './dto/create-execution.dto';
 import { ExecutionDetail } from './schemas/execution-detail.schema';
 import { CreateExecutionDto } from './dto/execution.dto';
 import { Execution } from './schemas/execution.schema';
+import { PaginationParams } from 'src/shared/dto/pagination-params';
 
 @Injectable()
 export class ExecutionService {
@@ -36,7 +37,7 @@ export class ExecutionService {
     return await this.executionDetailModel.create(CreateExecutionDetailDto);
   }
 
-  async create(createExecutionDto: CreateExecutionDto) {
+  async create(createExecutionDto: CreateExecutionDto, id_user: string) {
     let { date } = createExecutionDto;
     date = new Date(date);
     const day = date.getUTCDate();
@@ -54,10 +55,13 @@ export class ExecutionService {
     if (currentExecution)
       return await this.executionModel.findByIdAndUpdate(
         currentExecution._id,
-        createExecutionDto,
+        { ...createExecutionDto, user: id_user },
         { new: true },
       );
-    return await this.executionModel.create(createExecutionDto);
+    return await this.executionModel.create({
+      ...createExecutionDto,
+      user: id_user,
+    });
   }
 
   async findDetailExecutionByDate(date: Date) {
@@ -198,10 +202,39 @@ export class ExecutionService {
     ]);
   }
 
-  async getRecords() {
-    return await this.executionDetailModel
-      .find({})
-      .select('user date')
-      .sort({ _id: -1 });
+  async getDetailedRecords({ limit, offset }: PaginationParams) {
+    const [execution, length] = await Promise.all([
+      this.executionDetailModel
+        .find(
+          {},
+          {
+            user: 1,
+            date: 1,
+            vigente: {
+              $sum: '$data.presupVig',
+            },
+            ejecutado: {
+              $sum: '$data.ejecutado',
+            },
+          },
+        )
+        .skip(offset)
+        .limit(limit),
+      this.executionDetailModel.count(),
+    ]);
+    return { execution, length };
+  }
+
+  async getRecordsSummary({ limit, offset }: PaginationParams) {
+    const [execution, length] = await Promise.all([
+      this.executionModel
+        .find({})
+        .populate('user')
+        .sort({ date: -1 })
+        .skip(offset)
+        .limit(limit),
+      this.executionModel.count({}),
+    ]);
+    return { execution, length };
   }
 }

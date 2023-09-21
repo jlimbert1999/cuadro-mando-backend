@@ -6,20 +6,19 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { META_RESOURCE } from '../decorators/rol-protected.decorator';
+import { ValidRoles } from '../interfaces/valid-resources.interface';
 import { User } from 'src/administration/schemas/user.schema';
-import { META_RESOURCE } from 'src/auth/decorators/rol-protected.decorator';
-import { ValidRoles } from 'src/auth/interfaces/valid-resources.interface';
 
 @Injectable()
-export class AccountRoleGuard implements CanActivate {
+export class RoleGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
-
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles: ValidRoles[] = this.reflector.get(
       META_RESOURCE,
-      context.getClass(),
+      context.getHandler(),
     );
-    if (!requiredRoles || requiredRoles.length === 0) return true;
+    if (!requiredRoles) return true;
     const req = context.switchToHttp().getRequest();
     const user = req.user as User;
     if (!user)

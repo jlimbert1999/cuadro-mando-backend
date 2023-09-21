@@ -1,4 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose from 'mongoose';
+import { User } from 'src/administration/schemas/user.schema';
 @Schema()
 export class Execution {
   @Prop({
@@ -14,10 +16,15 @@ export class Execution {
   ejecutado: number;
 
   @Prop({
-    type: String,
-    default: 'user',
+    type: mongoose.Schema.Types.ObjectId,
+    ref: User.name,
   })
   user: string;
+
+  @Prop({
+    type: String,
+  })
+  olduser: string;
 
   @Prop({
     required: true,

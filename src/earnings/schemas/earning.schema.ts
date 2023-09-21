@@ -1,4 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose from 'mongoose';
+import { User } from 'src/administration/schemas/user.schema';
 
 @Schema({ collection: 'recaudacion' })
 export class Earnings {
@@ -27,10 +29,15 @@ export class Earnings {
   VEHICULOS: number;
 
   @Prop({
-    type: String,
-    default: 'Jose Limbert Flores Suarez',
+    type: mongoose.Schema.Types.ObjectId,
+    ref: User.name,
   })
-  user: number;
+  user: string;
+
+  @Prop({
+    type: String,
+  })
+  olduser: string;
 
   @Prop({
     required: true,

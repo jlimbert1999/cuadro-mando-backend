@@ -1,5 +1,6 @@
 export enum ValidRoles {
-  addColection = 'view-collection',
-  execution = 'recaudacion',
+  COLLECTION = 'collection',
+  EXECUTION = 'execution',
+  OFFICER = 'officer',
   ADMIN = 'admin',
 }

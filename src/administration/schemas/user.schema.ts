@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { ValidRoles } from 'src/auth/interfaces/valid-resources.interface';
 
 // @Schema({ _id: false })
 // class Privilege extends Document {
@@ -32,8 +33,9 @@ export class User extends Document {
 
   @Prop({
     type: [String],
+    enum: Object.values(ValidRoles),
   })
-  role: string[];
+  role: ValidRoles[];
 
   @Prop({
     type: String,

@@ -4,6 +4,7 @@ import { EarningsController } from './earnings.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Earnings, EarningSchema } from './schemas/earning.schema';
 import { Projections, ProjectionSchema } from './schemas/projection.schema';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   controllers: [EarningsController],
@@ -13,6 +14,7 @@ import { Projections, ProjectionSchema } from './schemas/projection.schema';
       { name: Earnings.name, schema: EarningSchema },
       { name: Projections.name, schema: ProjectionSchema },
     ]),
+    AuthModule,
   ],
 })
-export class EarningsModule { }
+export class EarningsModule {}

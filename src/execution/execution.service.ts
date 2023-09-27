@@ -108,6 +108,8 @@ export class ExecutionService {
         },
       },
     ]);
+    if (!lastRecord[0])
+      throw new BadRequestException('Sin registros para la fecha seleccionada');
     return { execution: data, lastRecord: lastRecord[0] };
   }
   async findExecutionByDate(date: Date) {

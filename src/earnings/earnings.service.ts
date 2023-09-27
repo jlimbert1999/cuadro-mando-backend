@@ -225,6 +225,8 @@ export class EarningsService {
     const earning = results[1][0];
     const yearProjection = results[2][0];
     const monthProjection = results[3][0];
+    if (!lastRecord)
+      throw new BadRequestException('Sin registros para la fecha seleccionada');
     return {
       lastRecord,
       earning,

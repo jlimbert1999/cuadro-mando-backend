@@ -13,7 +13,7 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   app.enableCors();
-  // 3100  10.0.38.19
   await app.listen(3000);
+  // await app.listen(3100, '10.0.38.19');
 }
 bootstrap();

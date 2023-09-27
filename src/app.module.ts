@@ -15,6 +15,9 @@ import { AdministrationModule } from './administration/administration.module';
     AuthModule,
     ExecutionModule,
     AdministrationModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

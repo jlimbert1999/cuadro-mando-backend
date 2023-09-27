@@ -43,14 +43,13 @@ export class AuthService {
   async checkAuthStatus(id_account: string) {
     const user = await this.userModel.findById(id_account);
     if (!user) throw new UnauthorizedException();
-    const resources = user.role;
     return {
       token: this.getToken({
         id_user: user._id,
         fullname: user.fullname,
       }),
-      resources,
-      menu: this.getMenu(resources),
+      resources: user.role,
+      menu: this.getMenu(user.role),
     };
   }
   getToken(payload: JwtPayload) {

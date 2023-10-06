@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { ExecutionService } from './execution.service';
 import { ExecutionController } from './execution.controller';
 import { MongooseModule } from '@nestjs/mongoose';
+
+import { AuthModule } from 'src/auth/auth.module';
+import { Execution, ExecutionSchema } from './schemas/execution.schema';
 import {
   ExecutionDetail,
   ExecutionDetailSchema,
-} from './schemas/execution-detail.schema';
-import { AuthModule } from 'src/auth/auth.module';
-import { Execution, ExecutionSchema } from './schemas/execution.schema';
+} from './schemas/execution-detal.schema';
 
 @Module({
   controllers: [ExecutionController],

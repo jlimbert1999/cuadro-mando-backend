@@ -115,39 +115,29 @@ export class EarningsService {
     return { records, length };
   }
 
-  async findEarningByDate(date: Date) {
+  async findCollectionByDate(date: Date) {
     date.setHours(23, 59, 59, 999);
-    const currentMount = date.getMonth() + 1;
-    const results = await Promise.all([
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const lastRecord = await this.earningModel
+      .findOne(
+        {
+          date: {
+            $gte: new Date(year, 0, 1),
+            $lt: new Date(year, month + 1, 1),
+          },
+        },
+        'user date',
+      )
+      .sort({ date: -1 });
+    if (!lastRecord)
+      throw new BadRequestException('Sin ejecucion para la fecha seleccionada');
+    const [collection, yearProjection, monthProjection] = await Promise.all([
       this.earningModel.aggregate([
         {
           $match: {
             date: {
-              $gte: new Date(date.getFullYear(), 0, 1),
-              $lte: date,
-            },
-          },
-        },
-        {
-          $sort: {
-            date: -1,
-          },
-        },
-        {
-          $limit: 1,
-        },
-        {
-          $project: {
-            user: 1,
-            date: 1,
-          },
-        },
-      ]),
-      this.earningModel.aggregate([
-        {
-          $match: {
-            date: {
-              $gte: new Date(date.getFullYear(), 0, 1),
+              $gte: new Date(year, 0, 1),
               $lte: date,
             },
           },
@@ -161,11 +151,6 @@ export class EarningsService {
             INMUEBLES: { $sum: '$INMUEBLES' },
           },
         },
-        {
-          $project: {
-            _id: 0,
-          },
-        },
       ]),
       this.projectionModel.aggregate([
         {
@@ -185,11 +170,6 @@ export class EarningsService {
             INMUEBLES: { $sum: '$months.INMUEBLES' },
           },
         },
-        {
-          $project: {
-            _id: 0,
-          },
-        },
       ]),
       this.projectionModel.aggregate([
         {
@@ -199,7 +179,7 @@ export class EarningsService {
         },
         {
           $project: {
-            months: { $slice: ['$months', 0, currentMount] },
+            months: { $slice: ['$months', 0, month + 1] },
           },
         },
         {
@@ -212,31 +192,23 @@ export class EarningsService {
             TASAS: { $sum: '$months.TASAS' },
             VEHICULOS: { $sum: '$months.VEHICULOS' },
             INMUEBLES: { $sum: '$months.INMUEBLES' },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
           },
         },
       ]),
     ]);
-    const lastRecord = results[0][0];
-    const earning = results[1][0];
-    const yearProjection = results[2][0];
-    const monthProjection = results[3][0];
-    if (!lastRecord)
-      throw new BadRequestException('Sin registros para la fecha seleccionada');
+    if (!monthProjection[0] || !yearProjection[0])
+      throw new BadRequestException(`Sin proyeccion para ${year}`);
     return {
       lastRecord,
-      earning,
-      yearProjection,
-      monthProjection,
+      collection: collection[0],
+      yearProjection: yearProjection[0],
+      monthProjection: monthProjection[0],
     };
   }
 
-  async getComparisonData(date: Date) {
-    return await this.earningModel.aggregate([
+  async getCollectionPerMonth(date: Date) {
+    const year = date.getFullYear();
+    const collection = await this.earningModel.aggregate([
       {
         $match: {
           date: {
@@ -254,34 +226,24 @@ export class EarningsService {
           TASAS: { $sum: '$TASAS' },
         },
       },
+      {
+        $sort: { _id: 1 },
+      },
     ]);
-  }
-  async getComparisonProjection(date: Date) {
-    const results = await Promise.all([
-      this.earningModel.aggregate([
-        {
-          $match: {
-            date: {
-              $gte: new Date(date.getFullYear(), 0, 1),
-              $lt: new Date(date.getFullYear() + 1, 0, 1),
-            },
-          },
-        },
-        {
-          $group: {
-            _id: { $month: '$date' },
-            ACTIVIDADES: { $sum: '$ACTIVIDADES' },
-            VEHICULOS: { $sum: '$VEHICULOS' },
-            INMUEBLES: { $sum: '$INMUEBLES' },
-            TASAS: { $sum: '$TASAS' },
-          },
-        },
-      ]),
-      this.projectionModel.findOne({ year: date.getFullYear() }),
-    ]);
+    if (collection.length === 0)
+      throw new BadRequestException(
+        `Sin registros de recaudacion para la gestion: ${year}`,
+      );
+    const projection = await this.projectionModel.findOne({
+      year: year,
+    });
+    if (!projection)
+      throw new BadRequestException(
+        `Sin proyeccion de recaudacion para la gestion: ${year}`,
+      );
     return {
-      earning: results[0],
-      projection: results[1],
+      projection,
+      collection,
     };
   }
 }

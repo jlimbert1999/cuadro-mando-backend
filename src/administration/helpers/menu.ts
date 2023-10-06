@@ -1,9 +1,9 @@
 import { ValidRoles } from 'src/auth/interfaces/valid-resources.interface';
 
-export const systemModules = [
+export const systemResources = [
   {
     roles: [ValidRoles.COLLECTION, ValidRoles.EXECUTION, ValidRoles.OFFICER],
-    text: 'Informe general',
+    text: 'Inicio',
     icon: 'description',
     routerLink: 'dashboard',
   },
@@ -14,13 +14,7 @@ export const systemModules = [
     routerLink: 'admin/users',
   },
   {
-    roles: [ValidRoles.COLLECTION],
-    text: 'Comparacion recaudacion',
-    icon: 'data_usage',
-    routerLink: 'collection/comparation',
-  },
-  {
-    roles: [ValidRoles.COLLECTION],
+    roles: [ValidRoles.OFFICER],
     text: 'Historicos recaudacion',
     icon: 'stacked_line_chart',
     routerLink: 'collection/history',
@@ -33,32 +27,42 @@ export const systemModules = [
   },
   {
     roles: [ValidRoles.OFFICER],
-    text: 'Ejecucion secretarias',
+    text: 'Comparacion recaudacion',
     icon: 'leaderboard',
-    routerLink: 'execution/departments',
+    routerLink: 'collection/comparation',
+    group: {
+      text: 'Comparaciones',
+      icon: 'list_alt',
+    },
   },
   {
     roles: [ValidRoles.OFFICER],
     text: 'Comparacion ejecucion',
-    icon: 'data_usage',
-    routerLink: 'execution/comparation',
+    icon: 'leaderboard',
+    routerLink: 'executions/comparation',
+    group: {
+      text: 'Comparaciones',
+      icon: 'list_alt',
+    },
   },
   {
     roles: [ValidRoles.COLLECTION],
-    text: 'Registros recaudacion',
+    text: 'Recaudacion',
     icon: 'list_alt',
     routerLink: 'collection/records',
+    group: {
+      text: 'Registros',
+      icon: 'list_alt',
+    },
   },
-  // {
-  //   roles: [ValidRoles.EXECUTION],
-  //   text: 'Registros ejecucion',
-  //   icon: 'list_alt',
-  //   routerLink: 'execution/records',
-  // },
   {
     roles: [ValidRoles.EXECUTION],
-    text: 'Ejecucion por gestiones',
+    text: 'Ejecucion',
     icon: 'list_alt',
-    routerLink: 'execution/summary',
+    routerLink: 'executions/summary',
+    group: {
+      text: 'Registros',
+      icon: 'list_alt',
+    },
   },
 ];

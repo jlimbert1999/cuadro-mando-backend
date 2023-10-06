@@ -8,32 +8,51 @@ import {
   Query,
 } from '@nestjs/common';
 import { ExecutionService } from './execution.service';
-import { CreateExecutionDetailDto } from './dto/create-execution.dto';
-import { CreateExecutionDto } from './dto/execution.dto';
 import { PaginationParams } from 'src/shared/dto/pagination-params';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { ValidRoles } from 'src/auth/interfaces/valid-resources.interface';
+import { User } from 'src/administration/schemas/user.schema';
+import {
+  CreateExecutionDetailDto,
+  CreateExecutionSummaryDto,
+  ExcelExecutionSummary,
+} from './dto';
 
 @Controller('execution')
 @Auth()
 export class ExecutionController {
   constructor(private readonly executionService: ExecutionService) {}
 
-  @Post('detail')
+  @Post('upload/detail')
   @Role(ValidRoles.EXECUTION)
-  createDetail(@Body() createExecutionDto: CreateExecutionDetailDto) {
-    return this.executionService.createDetail(createExecutionDto);
+  createDetail(
+    @Body() createExecutionDto: CreateExecutionDetailDto,
+    @GetUser() user: User,
+  ) {
+    return this.executionService.uploadDetail(createExecutionDto, user);
+  }
+
+  @Post('upload/summary')
+  @Role(ValidRoles.EXECUTION)
+  uploadSummary(
+    @Body() excelExecutionSummary: ExcelExecutionSummary,
+    @GetUser() user: User,
+  ) {
+    return this.executionService.uploadSummary(excelExecutionSummary, user._id);
   }
 
   @Post()
   @Role(ValidRoles.EXECUTION)
-  create(
+  createSummaryExecution(
     @GetUser('_id') id_user: string,
-    @Body() createExecutionDto: CreateExecutionDto,
+    @Body() createExecutionSummaryDto: CreateExecutionSummaryDto,
   ) {
-    return this.executionService.create(createExecutionDto, id_user);
+    return this.executionService.createSummaryExecution(
+      createExecutionSummaryDto,
+      id_user,
+    );
   }
 
   @Get('detail/:date')
@@ -46,17 +65,12 @@ export class ExecutionController {
     return this.executionService.findExecutionByDate(new Date(date));
   }
 
-  @Get('departments/:date')
-  getExecutionByDepartments(@Param('date') date: string) {
-    return this.executionService.findExecutionByDepartments(new Date(date));
-  }
-
   @Get('departments/:department/:date')
-  getDetailsOneDepartment(
+  async getDetailsOneDepartment(
     @Param('department') department: string,
     @Param('date') date: string,
   ) {
-    return this.executionService.getDetailsOneDepartment(
+    return await this.executionService.getDetailsByDepartment(
       new Date(date),
       department,
     );
@@ -67,6 +81,7 @@ export class ExecutionController {
   async getRecords(@Query() paginationParams: PaginationParams) {
     return await this.executionService.getDetailedRecords(paginationParams);
   }
+
   @Get('records/summary')
   @Role(ValidRoles.EXECUTION)
   async getRecordSummary(@Query() params: PaginationParams) {

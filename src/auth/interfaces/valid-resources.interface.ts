@@ -4,3 +4,4 @@ export enum ValidRoles {
   OFFICER = 'officer',
   ADMIN = 'admin'
 }
+  

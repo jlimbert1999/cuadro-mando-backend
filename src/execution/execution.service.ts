@@ -1,11 +1,19 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { CreateExecutionDetailDto } from './dto/create-execution.dto';
-import { ExecutionDetail } from './schemas/execution-detail.schema';
-import { CreateExecutionDto } from './dto/execution.dto';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Execution } from './schemas/execution.schema';
 import { PaginationParams } from 'src/shared/dto/pagination-params';
+import { ExecutionDetail } from './schemas/execution-detal.schema';
+import { User } from 'src/administration/schemas/user.schema';
+import {
+  CreateExecutionDetailDto,
+  CreateExecutionSummaryDto,
+  ExcelExecutionSummary,
+} from './dto';
 
 @Injectable()
 export class ExecutionService {
@@ -15,29 +23,78 @@ export class ExecutionService {
 
     @InjectModel(Execution.name)
     private executionModel: Model<Execution>,
+    @InjectConnection() private readonly connection: mongoose.Connection,
   ) {}
 
-  async createDetail(CreateExecutionDetailDto: CreateExecutionDetailDto) {
-    let { date } = CreateExecutionDetailDto;
-    date = new Date(date);
-    const currentExecution = await this.executionDetailModel.findOne({
-      $expr: {
-        $and: [
-          { $eq: [{ $month: '$date' }, date.getMonth() + 1] },
-          { $eq: [{ $year: '$date' }, date.getFullYear()] },
-        ],
-      },
-    });
-    if (currentExecution)
-      return await this.executionDetailModel.findByIdAndUpdate(
-        currentExecution._id,
-        CreateExecutionDetailDto,
-        { new: true },
+  async uploadDetail(
+    createExecutionDetailDto: CreateExecutionDetailDto,
+    user: User,
+  ) {
+    const { date } = createExecutionDetailDto;
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const session = await this.connection.startSession();
+    try {
+      session.startTransaction();
+      await this.executionDetailModel.deleteMany(
+        {
+          date: {
+            $gte: new Date(year, month, 1),
+            $lt: new Date(year, month + 1, 1),
+          },
+        },
+        { session },
       );
-    return await this.executionDetailModel.create(CreateExecutionDetailDto);
+      const execution = this.createExecutionDetailModel(
+        createExecutionDetailDto,
+        user,
+      );
+      const createdExecuction = await this.executionDetailModel.create(
+        execution,
+        { session },
+      );
+      await session.commitTransaction();
+      return createdExecuction;
+    } catch (error) {
+      await session.abortTransaction();
+      throw new InternalServerErrorException(
+        'No se puedo registrar la ejecucion',
+      );
+    } finally {
+      session.endSession();
+    }
   }
 
-  async create(createExecutionDto: CreateExecutionDto, id_user: string) {
+  createExecutionDetailModel(
+    createExecutionDetailDto: CreateExecutionDetailDto,
+    user: User,
+  ): ExecutionDetail[] {
+    const { data, date } = createExecutionDetailDto;
+    const execution = data.map((item) => {
+      const newData = {
+        user: user._id,
+        date,
+        ...item,
+      };
+      return new this.executionDetailModel(newData);
+    });
+    return execution;
+  }
+
+  async uploadSummary(
+    executionSummary: ExcelExecutionSummary,
+    id_user: string,
+  ) {
+    for (const execution of executionSummary.data) {
+      await this.createSummaryExecution(execution, id_user);
+    }
+    return true;
+  }
+
+  async createSummaryExecution(
+    createExecutionDto: CreateExecutionSummaryDto,
+    id_user: string,
+  ) {
     let { date } = createExecutionDto;
     date = new Date(date);
     const day = date.getUTCDate();
@@ -58,6 +115,7 @@ export class ExecutionService {
         { ...createExecutionDto, user: id_user },
         { new: true },
       );
+
     return await this.executionModel.create({
       ...createExecutionDto,
       user: id_user,
@@ -65,53 +123,46 @@ export class ExecutionService {
   }
 
   async findDetailExecutionByDate(date: Date) {
-    const lastRecord = await this.executionDetailModel.aggregate([
-      {
-        $match: {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const lastRecord = await this.executionDetailModel
+      .findOne(
+        {
           date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date,
+            $gte: new Date(year, 0, 1),
+            $lt: new Date(year, month + 1, 1),
           },
         },
-      },
-      {
-        $sort: {
-          date: -1,
-        },
-      },
-      {
-        $limit: 1,
-      },
-      {
-        $project: {
-          user: 1,
-          date: 1,
-        },
-      },
-    ]);
-
+        'user date',
+      )
+      .sort({ date: -1 });
+    if (!lastRecord)
+      throw new BadRequestException('Sin ejecucion para la fecha seleccionada');
     const data = await this.executionDetailModel.aggregate([
       {
         $match: {
           date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date,
+            $gte: new Date(year, lastRecord.date.getMonth(), 1),
+            $lt: new Date(year, lastRecord.date.getMonth() + 1, 1),
           },
         },
       },
-      { $unwind: '$data' },
       {
         $group: {
-          _id: '$data.secretaria',
-          presupuesto_vigente: { $sum: '$data.presupVig' },
-          presupuesto_ejecutado: { $sum: '$data.ejecutado' },
+          _id: '$secretaria',
+          presupuesto_vigente: { $sum: '$presupVig' },
+          presupuesto_ejecutado: { $sum: '$ejecutado' },
+        },
+      },
+      {
+        $sort: {
+          presupuesto_vigente: -1,
         },
       },
     ]);
-    if (!lastRecord[0])
-      throw new BadRequestException('Sin registros para la fecha seleccionada');
-    return { execution: data, lastRecord: lastRecord[0] };
+    return { execution: data, lastRecord };
   }
+
   async findExecutionByDate(date: Date) {
     date.setHours(23, 59, 59, 999);
     const lastRecord = await this.executionModel.aggregate([
@@ -159,49 +210,16 @@ export class ExecutionService {
     return { execution: execution[0], lastRecord: lastRecord[0] };
   }
 
-  async findExecutionByDepartments(date: Date) {
-    return await this.executionDetailModel.aggregate([
-      {
-        $match: {
-          date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date,
-          },
-        },
+  async getDetailsByDepartment(date: Date, initials: string) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return await this.executionDetailModel.find({
+      secretaria: initials,
+      date: {
+        $gte: new Date(year, month, 1),
+        $lt: new Date(year, month + 1, 1),
       },
-      { $unwind: '$data' },
-      {
-        $group: {
-          _id: '$data.secretaria',
-          presupuesto_vigente: { $sum: '$data.presupVig' },
-          presupuesto_ejecutado: { $sum: '$data.ejecutado' },
-        },
-      },
-    ]);
-  }
-
-  async getDetailsOneDepartment(date: Date, initials: string) {
-    return await this.executionDetailModel.aggregate([
-      {
-        $match: {
-          date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date,
-          },
-        },
-      },
-      {
-        $project: {
-          data: {
-            $filter: {
-              input: '$data',
-              as: 'item',
-              cond: { $eq: ['$$item.secretaria', initials.toUpperCase()] },
-            },
-          },
-        },
-      },
-    ]);
+    });
   }
 
   async getDetailedRecords({ limit, offset }: PaginationParams) {

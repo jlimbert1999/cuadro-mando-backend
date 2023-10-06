@@ -11,7 +11,7 @@ import { JwtPayload } from './interfaces/jwt.interface';
 import { AuthDto } from './dto/auth.dto';
 import { User } from 'src/administration/schemas/user.schema';
 import { ValidRoles } from './interfaces/valid-resources.interface';
-import { systemModules } from 'src/administration/helpers/menu';
+import { systemResources } from 'src/administration/helpers/menu';
 
 @Injectable()
 export class AuthService {
@@ -57,9 +57,32 @@ export class AuthService {
   }
 
   getMenu(roles: ValidRoles[]) {
-    const menu = systemModules.filter((resource) =>
-      resource.roles.some((role) => roles.includes(role)),
-    );
-    return menu;
+    const allowedResources = systemResources
+      .filter((systemResource) =>
+        systemResource.roles.some((role) => roles.includes(role)),
+      )
+      .map((resource) => resource);
+    const groupedMenu = allowedResources.reduce((result, menuItem) => {
+      if (!menuItem.group) {
+        const category = menuItem.routerLink;
+        result[category] = menuItem;
+      } else {
+        const { text, icon } = menuItem.group;
+        if (!result[text]) {
+          result[text] = {
+            text: text,
+            icon,
+            children: [],
+          };
+        }
+        result[text].children.push({
+          text: menuItem.text,
+          icon: menuItem.icon,
+          routerLink: menuItem.routerLink,
+        });
+      }
+      return result;
+    }, {});
+    return Object.values(groupedMenu);
   }
 }

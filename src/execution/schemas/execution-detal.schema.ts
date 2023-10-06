@@ -1,9 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, SchemaFactory, Schema } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 import { User } from 'src/administration/schemas/user.schema';
 
 @Schema()
-class ExecutionDetails extends Document {
+export class ExecutionDetail extends Document {
   @Prop({
     type: String,
     required: true,
@@ -93,32 +93,16 @@ class ExecutionDetails extends Document {
     required: true,
   })
   saldoDeveng: number;
-}
-
-const ExecutionDataSchema = SchemaFactory.createForClass(ExecutionDetails);
-@Schema({ collection: 'ejecucion' })
-export class ExecutionDetail {
-  @Prop({
-    _id: false,
-    type: [ExecutionDataSchema],
-  })
-  data: ExecutionDetails[];
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: User.name,
   })
-  user: string;
-
-  @Prop({
-    type: String,
-  })
-  olduser: string;
+  user: User;
 
   @Prop({
     required: true,
     type: Date,
-    default: Date.now,
   })
   date: Date;
 }

@@ -52,15 +52,11 @@ export class EarningsController {
 
   @Get(':date')
   getCurrentEarning(@Param('date', ParseIntPipe) date: number) {
-    return this.earningsService.findEarningByDate(new Date(date));
+    return this.earningsService.findCollectionByDate(new Date(date));
   }
 
-  @Get('/comparison/:date')
-  getComparisonData(@Param('date', ParseIntPipe) date: number) {
-    return this.earningsService.getComparisonData(new Date(date));
-  }
   @Get('/comparison/projection/:date')
   getComparisonProjection(@Param('date', ParseIntPipe) date: number) {
-    return this.earningsService.getComparisonProjection(new Date(date));
+    return this.earningsService.getCollectionPerMonth(new Date(date));
   }
 }

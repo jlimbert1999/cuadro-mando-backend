@@ -1,6 +1,6 @@
 import { IsDateString, IsNumber } from 'class-validator';
 
-export class CreateExecutionDto {
+export class CreateExecutionSummaryDto {
   @IsNumber()
   vigente: number;
 

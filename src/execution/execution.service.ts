@@ -185,29 +185,18 @@ export class ExecutionService {
     ]);
     if (lastRecord.length === 0)
       throw new BadRequestException(`Sin registros para el rango seleccionado`);
-    const execution = await this.executionModel.aggregate([
-      {
-        $match: {
-          date: {
-            $gte: new Date(date.getFullYear(), 0, 1),
-            $lte: date,
-          },
+    const execution = await this.executionModel
+      .findOne({
+        date: {
+          $gte: new Date(date.getFullYear(), 0, 1),
+          $lte: date,
         },
-      },
-      {
-        $group: {
-          _id: null,
-          vigente: { $sum: '$vigente' },
-          ejecutado: { $sum: '$ejecutado' },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-        },
-      },
-    ]);
-    return { execution: execution[0], lastRecord: lastRecord[0] };
+      })
+      .sort({ date: -1 });
+    return {
+      execution: { vigente: execution.vigente, ejecutado: execution.ejecutado },
+      lastRecord: lastRecord[0],
+    };
   }
 
   async getDetailsByDepartment(date: Date, initials: string) {

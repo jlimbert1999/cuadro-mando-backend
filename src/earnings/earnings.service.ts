@@ -124,7 +124,7 @@ export class EarningsService {
         {
           date: {
             $gte: new Date(year, 0, 1),
-            $lt: new Date(year, month + 1, 1),
+            $lte: date,
           },
         },
         'user date',
